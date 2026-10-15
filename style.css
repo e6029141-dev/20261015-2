@@ -17,3 +17,8 @@ body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
 
         .btn { background: linear-gradient(135deg, #4f46e5, #3b82f6); color: white; padding: 1rem 2rem; border-radius: 9999px; font-size: 1.5rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5); transition: transform 0.1s, box-shadow 0.1s; pointer-events: auto; border: 2px solid #818cf8; }
         .btn:active { transform: scale(0.95); box-shadow: 0 2px 10px rgba(59, 130, 246, 0.5); }
+        .btn-secondary { margin: 0.5rem 0; padding: 0.75rem 1.5rem; background: #1f2937; border-color: #6b7280; box-shadow: none; font-size: 1rem; }
+        .stage-options { display: grid; grid-template-columns: repeat(3, minmax(90px, 1fr)); gap: 0.75rem; width: min(90vw, 420px); max-height: 50vh; overflow-y: auto; padding: 0.5rem; }
+        .stage-option { min-height: 56px; border: 1px solid #60a5fa; border-radius: 8px; background: #172554; color: white; font-size: 1rem; font-weight: bold; cursor: pointer; }
+        .stage-option:hover:not(:disabled) { background: #1d4ed8; }
+        .stage-option:disabled { border-color: #4b5563; background: #1f2937; color: #9ca3af; cursor: not-allowed; }

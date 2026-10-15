@@ -4,6 +4,14 @@ const canvas = document.getElementById('gameCanvas');
         const stageDisplay = document.getElementById('stageDisplay');
         const hpDisplay = document.getElementById('hpDisplay');
         const powerDisplay = document.getElementById('powerDisplay');
+        const stageOptions = document.getElementById('stageOptions');
+
+        function loadHighestStage() {
+            const savedStage = Number(localStorage.getItem('spaceShooterHighestStage'));
+            return Number.isInteger(savedStage) && savedStage > 0 ? savedStage : 1;
+        }
+
+        let highestStageReached = loadHighestStage();
         
         let animationId;
         let gameActive = false;
@@ -731,7 +739,9 @@ const canvas = document.getElementById('gameCanvas');
             setTimeout(() => {
                 clearScreen.classList.add('hidden');
                 setTimeout(() => {
+                    if (!gameActive) return;
                     currentStage++;
+                    saveHighestStage(currentStage);
                     isStageTransition = false;
                     lastBossSpawnTime = performance.now();
                     updateUI();
@@ -935,11 +945,44 @@ const canvas = document.getElementById('gameCanvas');
         }
         window.addEventListener('resize', resize);
 
-        function startGame() {
+        function saveHighestStage(stage) {
+            if (stage <= highestStageReached) return;
+            highestStageReached = stage;
+            localStorage.setItem('spaceShooterHighestStage', String(highestStageReached));
+            renderStageOptions();
+        }
+
+        function renderStageOptions() {
+            stageOptions.replaceChildren();
+            for (let stage = 1; stage <= highestStageReached + 1; stage++) {
+                const isUnlocked = stage <= highestStageReached;
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'stage-option';
+                button.textContent = isUnlocked ? `STAGE ${stage}` : `STAGE ${stage} - LOCKED`;
+                button.disabled = !isUnlocked;
+                if (isUnlocked) button.addEventListener('click', () => startGame(stage));
+                stageOptions.append(button);
+            }
+        }
+
+        function openStageSelect() {
+            renderStageOptions();
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('stageSelectScreen').classList.remove('hidden');
+        }
+
+        function closeStageSelect() {
+            document.getElementById('stageSelectScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+
+        function startGame(startStage = 1) {
             initAudio();
             resize();
             
             document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('stageSelectScreen').classList.add('hidden');
             document.getElementById('gameOverScreen').classList.add('hidden');
             
             cancelAnimationFrame(animationId);
@@ -957,7 +1000,8 @@ const canvas = document.getElementById('gameCanvas');
             isStageTransition = false;
             
             score = 0;
-            currentStage = 1;
+            currentStage = startStage;
+            saveHighestStage(currentStage);
             frameCount = 0;
             lastBossSpawnTime = performance.now();
             gameActive = true;
@@ -966,4 +1010,5 @@ const canvas = document.getElementById('gameCanvas');
             animationId = requestAnimationFrame(animate);
         }
 
+        renderStageOptions();
         resize();

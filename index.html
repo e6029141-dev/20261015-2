@@ -26,7 +26,14 @@
         <h1 class="text-5xl md:text-7xl font-black text-white mb-2 tracking-wider" style="text-shadow: 0 0 20px #3b82f6;">SPACE SHOOTER</h1>
         <p class="text-blue-300 mb-2 font-bold">ver 3.00</p>
         <p class="text-gray-400 text-sm mb-8 tracking-widest font-semibold">produced by HONDA</p>
+        <button class="btn btn-secondary" onclick="openStageSelect()">STAGE SELECT</button>
         <button class="btn" onclick="startGame()">START GAME</button>
+    </div>
+
+    <div id="stageSelectScreen" class="overlay hidden">
+        <h1 class="text-5xl font-black text-white mb-6 tracking-wider">SELECT STAGE</h1>
+        <div id="stageOptions" class="stage-options"></div>
+        <button class="btn btn-secondary" onclick="closeStageSelect()">BACK</button>
     </div>
 
     <div id="gameOverScreen" class="overlay hidden">
