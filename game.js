@@ -91,11 +91,11 @@ const canvas = document.getElementById('gameCanvas');
                 const step = bgmStep % bgmTrack.lead.length;
                 const leadNote = bgmTrack.lead[step];
                 if (leadNote > 0) {
-                    scheduleBgmTone(leadNote, bgmNextNoteTime, stepDuration * 0.75, 'triangle', 0.035);
+                    scheduleBgmTone(leadNote, bgmNextNoteTime, stepDuration * 0.75, 'triangle', 0.18);
                 }
                 if (step % 4 === 0) {
                     const bassNote = bgmTrack.bass[Math.floor(step / 4)];
-                    scheduleBgmTone(bassNote, bgmNextNoteTime, stepDuration * 3.5, 'sine', 0.045);
+                    scheduleBgmTone(bassNote, bgmNextNoteTime, stepDuration * 3.5, 'sine', 0.24);
                 }
                 bgmNextNoteTime += stepDuration;
                 bgmStep++;
@@ -127,7 +127,7 @@ const canvas = document.getElementById('gameCanvas');
             bgmNextNoteTime = audioCtx.currentTime + 0.05;
             bgmGain = audioCtx.createGain();
             bgmGain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
-            bgmGain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.5);
+            bgmGain.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.5);
             bgmGain.connect(audioCtx.destination);
             scheduleBgm();
             bgmTimer = setInterval(scheduleBgm, 50);
@@ -146,7 +146,7 @@ const canvas = document.getElementById('gameCanvas');
                 osc.type = 'square';
                 osc.frequency.setValueAtTime(400, now);
                 osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-                gainNode.gain.setValueAtTime(0.05, now);
+                gainNode.gain.setValueAtTime(0.025, now);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
                 osc.start(now);
                 osc.stop(now + 0.1);
