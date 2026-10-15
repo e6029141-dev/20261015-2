@@ -111,6 +111,19 @@ const canvas = document.getElementById('gameCanvas');
                 gainNode.gain.linearRampToValueAtTime(0.001, now + 0.2);
                 osc.start(now);
                 osc.stop(now + 0.2);
+            } else if (type === 'stageClear') {
+                osc.type = 'triangle';
+                const notes = [523.25, 659.25, 783.99, 1046.5];
+                notes.forEach((frequency, index) => {
+                    const noteStart = now + index * 0.16;
+                    const noteEnd = noteStart + (index === notes.length - 1 ? 0.3 : 0.13);
+                    osc.frequency.setValueAtTime(frequency, noteStart);
+                    gainNode.gain.setValueAtTime(0.0001, noteStart);
+                    gainNode.gain.linearRampToValueAtTime(0.14, noteStart + 0.02);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, noteEnd);
+                });
+                osc.start(now);
+                osc.stop(now + 0.9);
             }
         }
 
@@ -728,6 +741,7 @@ const canvas = document.getElementById('gameCanvas');
 
         function handleStageClear() {
             isStageTransition = true;
+            playSound('stageClear');
             boss = null; 
             bossActive = false;
             bossProjectiles = [];
