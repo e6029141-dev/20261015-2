@@ -5,6 +5,12 @@ const canvas = document.getElementById('gameCanvas');
         const hpDisplay = document.getElementById('hpDisplay');
         const powerDisplay = document.getElementById('powerDisplay');
         const stageOptions = document.getElementById('stageOptions');
+        const recordForm = document.getElementById('recordForm');
+        const recordName = document.getElementById('recordName');
+        const recordList = document.getElementById('recordList');
+        const recordStorageKey = 'spaceShooterRecords';
+        const recordNamePattern = /^[A-Za-z\p{Script_Extensions=Hiragana}\p{Script_Extensions=Katakana}\p{Script=Han}ー]{1,12}$/u;
+        const recordNameCharacterPattern = /[A-Za-z\p{Script_Extensions=Hiragana}\p{Script_Extensions=Katakana}\p{Script=Han}ー]/u;
 
         function loadHighestStage() {
             const savedStage = Number(localStorage.getItem('spaceShooterHighestStage'));
@@ -795,6 +801,87 @@ const canvas = document.getElementById('gameCanvas');
             }
         }
 
+        function loadRecords() {
+            try {
+                const records = JSON.parse(localStorage.getItem(recordStorageKey) || '[]');
+                if (!Array.isArray(records)) return [];
+                return records.filter(record =>
+                    record && recordNamePattern.test(record.name) &&
+                    Number.isInteger(record.stage) && record.stage > 0 &&
+                    Number.isFinite(record.score) && record.score >= 0
+                );
+            } catch {
+                return [];
+            }
+        }
+
+        function renderRecords(records) {
+            recordList.replaceChildren();
+            records.forEach((record, index) => {
+                const row = document.createElement('li');
+                const rank = document.createElement('span');
+                const name = document.createElement('span');
+                const detail = document.createElement('span');
+                rank.className = 'record-rank';
+                rank.textContent = `${index + 1}.`;
+                name.textContent = record.name;
+                detail.className = 'record-detail';
+                detail.textContent = `ステージ${record.stage} ポイント${record.score.toLocaleString()}`;
+                row.append(rank, name, detail);
+                recordList.append(row);
+            });
+        }
+
+        function showRecordEntry() {
+            document.getElementById('recordStage').value = String(currentStage);
+            document.getElementById('recordScore').value = String(score);
+            recordName.value = '';
+            document.getElementById('recordEntry').classList.remove('hidden');
+            document.getElementById('recordResult').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+            recordName.focus();
+        }
+
+        let isRecordNameComposing = false;
+
+        function sanitizeRecordName() {
+            recordName.value = Array.from(recordName.value)
+                .filter(character => recordNameCharacterPattern.test(character))
+                .slice(0, 12)
+                .join('')
+                .toUpperCase();
+        }
+
+        recordName.addEventListener('compositionstart', () => {
+            isRecordNameComposing = true;
+        });
+        recordName.addEventListener('compositionend', () => {
+            isRecordNameComposing = false;
+            sanitizeRecordName();
+        });
+        recordName.addEventListener('input', event => {
+            if (event.isComposing || isRecordNameComposing) return;
+            sanitizeRecordName();
+        });
+
+        recordForm.addEventListener('submit', event => {
+            event.preventDefault();
+            const name = recordName.value.toUpperCase();
+            if (!recordNamePattern.test(name)) {
+                recordName.reportValidity();
+                return;
+            }
+
+            const records = [...loadRecords(), { name, stage: currentStage, score }]
+                .sort((first, second) => second.stage - first.stage || second.score - first.score)
+                .slice(0, 10);
+            localStorage.setItem(recordStorageKey, JSON.stringify(records));
+            document.getElementById('recordSavedSummary').textContent = `${name} ・ ステージ${currentStage} ポイント${score.toLocaleString()}`;
+            renderRecords(records);
+            document.getElementById('recordEntry').classList.add('hidden');
+            document.getElementById('recordResult').classList.remove('hidden');
+        });
+
         function damagePlayer() {
             if (Date.now() < player.invincibleUntil) return;
 
@@ -817,8 +904,7 @@ const canvas = document.getElementById('gameCanvas');
             if (player.hp <= 0) {
                 gameActive = false;
                 stopBgm();
-                document.getElementById('gameOverScreen').classList.remove('hidden');
-                document.getElementById('finalScore').innerText = score;
+                showRecordEntry();
             }
         }
 
