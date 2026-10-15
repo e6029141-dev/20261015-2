@@ -977,6 +977,17 @@ const canvas = document.getElementById('gameCanvas');
             document.getElementById('startScreen').classList.remove('hidden');
         }
 
+        function returnToTitle() {
+            gameActive = false;
+            isStageTransition = false;
+            player.isShooting = false;
+            cancelAnimationFrame(animationId);
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('stageSelectScreen').classList.add('hidden');
+            document.getElementById('stageClearScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+
         function startGame(startStage = 1) {
             initAudio();
             resize();
