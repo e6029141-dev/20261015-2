@@ -272,6 +272,9 @@ const canvas = document.getElementById('gameCanvas');
             powerLevel: 1, // 1〜5
             lastShot: 0,
             invincibleUntil: 0,
+            laserUntil: 0,
+            laserNextDamageAt: 0,
+            barrierUntil: 0,
             hasShield: false,
             isShooting: false,
             
@@ -280,12 +283,34 @@ const canvas = document.getElementById('gameCanvas');
                 this.y = canvas.height - this.height - 50;
                 this.hp = 3;
                 this.powerLevel = 1;
-                this.hasShield = false;
                 this.invincibleUntil = 0;
+                this.laserUntil = 0;
+                this.laserNextDamageAt = 0;
+                this.barrierUntil = 0;
+                this.hasShield = false;
                 this.isShooting = false;
             },
             
             draw() {
+                const now = Date.now();
+                if (now < this.laserUntil) {
+                    const centerX = this.x + this.width / 2;
+                    const beamBottom = this.y + this.height / 2;
+                    const beamWidth = 52 + Math.sin(now / 45) * 8;
+                    const beamGradient = ctx.createLinearGradient(centerX, 0, centerX, beamBottom);
+                    beamGradient.addColorStop(0, 'rgba(34, 211, 238, 0.18)');
+                    beamGradient.addColorStop(0.65, 'rgba(59, 130, 246, 0.5)');
+                    beamGradient.addColorStop(1, 'rgba(255, 255, 255, 0.95)');
+                    ctx.save();
+                    ctx.fillStyle = beamGradient;
+                    ctx.shadowBlur = 24;
+                    ctx.shadowColor = '#22d3ee';
+                    ctx.fillRect(centerX - beamWidth / 2, 0, beamWidth, beamBottom);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+                    ctx.fillRect(centerX - 5, 0, 10, beamBottom);
+                    ctx.restore();
+                }
+
                 if (Date.now() < this.invincibleUntil && Math.floor(Date.now() / 100) % 2 === 0) {
                     return; 
                 }
@@ -296,11 +321,24 @@ const canvas = document.getElementById('gameCanvas');
                 if (this.hasShield) {
                     ctx.beginPath();
                     ctx.arc(0, 0, this.width, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(59, 130, 246, 0.3)';
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.22)';
                     ctx.fill();
                     ctx.lineWidth = 3;
-                    ctx.strokeStyle = 'rgba(96, 165, 250, 0.8)';
+                    ctx.strokeStyle = 'rgba(96, 165, 250, 0.9)';
                     ctx.stroke();
+                }
+
+                if (now < this.barrierUntil) {
+                    ctx.beginPath();
+                    ctx.arc(0, 0, this.width * 2.2 + Math.sin(now / 55) * 5, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(34, 211, 238, 0.12)';
+                    ctx.fill();
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = 'rgba(103, 232, 249, 0.9)';
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = '#22d3ee';
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
                 }
 
                 ctx.shadowBlur = 10;
@@ -357,6 +395,7 @@ const canvas = document.getElementById('gameCanvas');
             },
             
             shoot() {
+                if (Date.now() < this.laserUntil) return;
                 const cx = this.x + this.width / 2;
                 const cy = this.y;
                 const speed = 12;
@@ -936,12 +975,13 @@ const canvas = document.getElementById('gameCanvas');
         });
 
         function damagePlayer() {
-            if (Date.now() < player.invincibleUntil) return;
+            const now = Date.now();
+            if (now < player.barrierUntil || now < player.invincibleUntil) return;
 
             if (player.hasShield) {
                 player.hasShield = false;
-                player.invincibleUntil = Date.now() + 1500;
-                playSound('shieldBreak');
+                player.invincibleUntil = now + 1500;
+                playSound('shield');
                 createExplosion(player.x + player.width/2, player.y + player.height/2, '#60a5fa', 20);
                 return;
             }
@@ -959,6 +999,29 @@ const canvas = document.getElementById('gameCanvas');
                 stopBgm();
                 showRecordEntry();
             }
+        }
+
+        function activateBarrier() {
+            player.barrierUntil = Date.now() + 1600;
+            playSound('shield');
+        }
+
+        function collectBarrier() {
+            if (player.hasShield) activateBarrier();
+            else {
+                player.hasShield = true;
+                playSound('shield');
+            }
+        }
+
+        function defeatBoss() {
+            if (!boss) return;
+            score += 1000 * currentStage;
+            createExplosion(boss.x + boss.width/2, boss.y + boss.height/2, '#ef4444', 100);
+            createExplosion(boss.x, boss.y, '#ffaa00', 50);
+            createExplosion(boss.x + boss.width, boss.y + boss.height, '#ffaa00', 50);
+            updateUI();
+            handleStageClear();
         }
 
         function handleStageClear() {
@@ -1104,6 +1167,25 @@ const canvas = document.getElementById('gameCanvas');
                 }
             }
 
+            if (Date.now() < player.laserUntil) {
+                const beamCenterX = player.x + player.width / 2;
+                const beamHalfWidth = 30;
+                const beamBottom = player.y + player.height / 2;
+                for (let i = enemies.length - 1; i >= 0; i--) {
+                    const enemy = enemies[i];
+                    const intersectsBeam = enemy.x < beamCenterX + beamHalfWidth &&
+                        enemy.x + enemy.width > beamCenterX - beamHalfWidth &&
+                        enemy.y < beamBottom && enemy.y + enemy.height > 0;
+                    if (!intersectsBeam) continue;
+
+                    score += enemy.points;
+                    createExplosion(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2, enemy.color);
+                    spawnItemFromEnemy(enemy.x + enemy.width / 2, enemy.y + enemy.height / 2);
+                    enemies.splice(i, 1);
+                    updateUI();
+                }
+            }
+
             for (let i = items.length - 1; i >= 0; i--) {
                 const item = items[i];
                 item.update();
@@ -1116,17 +1198,22 @@ const canvas = document.getElementById('gameCanvas');
                             player.powerLevel++;
                             score += 100;
                         } else {
+                            player.laserUntil = Date.now() + 1600;
+                            player.laserNextDamageAt = 0;
                             score += 1000;
                         }
                         playSound('powerup');
                     } else if (item.type === 'heal') {
-                        player.hp = Math.min(player.maxHp, player.hp + 1);
+                        if (player.hp < player.maxHp) {
+                            player.hp++;
+                            playSound('heal');
+                        } else {
+                            collectBarrier();
+                        }
                         score += 50;
-                        playSound('heal');
                     } else if (item.type === 'shield') {
-                        player.hasShield = true;
+                        collectBarrier();
                         score += 50;
-                        playSound('shield');
                     }
                     
                     updateUI();
@@ -1152,15 +1239,20 @@ const canvas = document.getElementById('gameCanvas');
                         createExplosion(p.x, p.y, '#ffffff', 3);
                         
                         if (boss.hp <= 0) {
-                            score += 1000 * currentStage;
-                            createExplosion(boss.x + boss.width/2, boss.y + boss.height/2, '#ef4444', 100);
-                            createExplosion(boss.x, boss.y, '#ffaa00', 50);
-                            createExplosion(boss.x + boss.width, boss.y + boss.height, '#ffaa00', 50);
-                            updateUI();
-                            handleStageClear();
+                            defeatBoss();
                             break; 
                         }
                     }
+                }
+
+                if (boss && Date.now() < player.laserUntil && Date.now() >= player.laserNextDamageAt &&
+                    boss.x < player.x + player.width / 2 + 30 &&
+                    boss.x + boss.width > player.x + player.width / 2 - 30 &&
+                    boss.y < player.y + player.height / 2 && boss.y + boss.height > 0) {
+                    boss.hp -= 5;
+                    player.laserNextDamageAt = Date.now() + 120;
+                    createExplosion(player.x + player.width / 2, Math.min(player.y, boss.y + boss.height), '#67e8f9', 3);
+                    if (boss.hp <= 0) defeatBoss();
                 }
 
                 if (boss && player.x < boss.x + boss.width &&
