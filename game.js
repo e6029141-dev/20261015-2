@@ -5,10 +5,13 @@ const canvas = document.getElementById('gameCanvas');
         const hpDisplay = document.getElementById('hpDisplay');
         const powerDisplay = document.getElementById('powerDisplay');
         const stageOptions = document.getElementById('stageOptions');
+        const nextLoopButton = document.getElementById('nextLoopButton');
         const recordForm = document.getElementById('recordForm');
         const recordName = document.getElementById('recordName');
         const recordList = document.getElementById('recordList');
         const recordStorageKey = 'spaceShooterRecords';
+        const completedLoopStageStorageKey = 'spaceShooterCompletedLoopStage';
+        const stagesPerLoop = 10;
         const recordNamePattern = /^[A-Za-z\p{Script_Extensions=Hiragana}\p{Script_Extensions=Katakana}\p{Script=Han}ー]{1,12}$/u;
         const recordNameCharacterPattern = /[A-Za-z\p{Script_Extensions=Hiragana}\p{Script_Extensions=Katakana}\p{Script=Han}ー]/u;
 
@@ -17,7 +20,13 @@ const canvas = document.getElementById('gameCanvas');
             return Number.isInteger(savedStage) && savedStage > 0 ? savedStage : 1;
         }
 
+        function loadCompletedLoopStage() {
+            const savedStage = Number(localStorage.getItem(completedLoopStageStorageKey));
+            return Number.isInteger(savedStage) && savedStage > 0 && savedStage % stagesPerLoop === 0 ? savedStage : 0;
+        }
+
         let highestStageReached = loadHighestStage();
+        let highestCompletedLoopStage = loadCompletedLoopStage();
         
         let animationId;
         let gameActive = false;
@@ -924,12 +933,27 @@ const canvas = document.getElementById('gameCanvas');
             enemyProjectiles = [];
             
             const clearScreen = document.getElementById('stageClearScreen');
+            const clearMessage = clearScreen.querySelector('h1');
+            const isLoopClear = currentStage % stagesPerLoop === 0;
+            clearMessage.textContent = isLoopClear ? 'ALL STAGES CLEAR!' : 'STAGE CLEAR!';
             clearScreen.classList.remove('hidden');
             
             setTimeout(() => {
                 clearScreen.classList.add('hidden');
                 setTimeout(() => {
                     if (!gameActive) return;
+                    if (isLoopClear) {
+                        if (currentStage > highestCompletedLoopStage) {
+                            highestCompletedLoopStage = currentStage;
+                            localStorage.setItem(completedLoopStageStorageKey, String(highestCompletedLoopStage));
+                        }
+                        updateNextLoopButton();
+                        gameActive = false;
+                        stopBgm();
+                        document.getElementById('startScreen').classList.remove('hidden');
+                        clearMessage.textContent = 'STAGE CLEAR!';
+                        return;
+                    }
                     currentStage++;
                     saveHighestStage(currentStage);
                     startBgm(currentStage);
@@ -1143,6 +1167,18 @@ const canvas = document.getElementById('gameCanvas');
             renderStageOptions();
         }
 
+        function updateNextLoopButton() {
+            const nextStage = highestCompletedLoopStage + 1;
+            const lastStage = nextStage + stagesPerLoop - 1;
+            nextLoopButton.textContent = `もう一周挑戦する（ステージ${nextStage}〜${lastStage}）`;
+            nextLoopButton.classList.toggle('hidden', highestCompletedLoopStage === 0);
+        }
+
+        function startNextLoop() {
+            if (highestCompletedLoopStage === 0) return;
+            startGame(highestCompletedLoopStage + 1);
+        }
+
         function renderStageOptions() {
             stageOptions.replaceChildren();
             for (let stage = 1; stage <= highestStageReached + 1; stage++) {
@@ -1225,5 +1261,6 @@ const canvas = document.getElementById('gameCanvas');
             animationId = requestAnimationFrame(animate);
         }
 
+        updateNextLoopButton();
         renderStageOptions();
         resize();
