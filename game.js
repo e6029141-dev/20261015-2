@@ -5,7 +5,6 @@ const canvas = document.getElementById('gameCanvas');
         const hpDisplay = document.getElementById('hpDisplay');
         const powerDisplay = document.getElementById('powerDisplay');
         const stageOptions = document.getElementById('stageOptions');
-        const nextLoopButton = document.getElementById('nextLoopButton');
         const recordForm = document.getElementById('recordForm');
         const recordName = document.getElementById('recordName');
         const recordList = document.getElementById('recordList');
@@ -1053,10 +1052,13 @@ const canvas = document.getElementById('gameCanvas');
                             highestCompletedLoopStage = currentStage;
                             localStorage.setItem(completedLoopStageStorageKey, String(highestCompletedLoopStage));
                         }
-                        updateNextLoopButton();
+                        const firstStage = highestCompletedLoopStage - stagesPerLoop + 1;
+                        const nextStage = highestCompletedLoopStage + 1;
+                        document.getElementById('loopCompleteSummary').textContent =
+                            `ステージ${firstStage}〜${highestCompletedLoopStage}をクリアしました。次はステージ${nextStage}〜${nextStage + stagesPerLoop - 1}に挑戦できます。`;
                         gameActive = false;
                         stopBgm();
-                        document.getElementById('startScreen').classList.remove('hidden');
+                        document.getElementById('loopCompleteScreen').classList.remove('hidden');
                         clearMessage.textContent = 'STAGE CLEAR!';
                         clearSubtitle.textContent = '';
                         clearScreen.classList.remove('loop-clear');
@@ -1304,16 +1306,14 @@ const canvas = document.getElementById('gameCanvas');
             renderStageOptions();
         }
 
-        function updateNextLoopButton() {
-            const nextStage = highestCompletedLoopStage + 1;
-            const lastStage = nextStage + stagesPerLoop - 1;
-            nextLoopButton.textContent = `もう一周挑戦する（ステージ${nextStage}〜${lastStage}）`;
-            nextLoopButton.classList.toggle('hidden', highestCompletedLoopStage === 0);
-        }
-
         function startNextLoop() {
             if (highestCompletedLoopStage === 0) return;
             startGame(highestCompletedLoopStage + 1);
+        }
+
+        function quitAfterLoop() {
+            document.getElementById('loopCompleteScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
         }
 
         function renderStageOptions() {
@@ -1361,6 +1361,7 @@ const canvas = document.getElementById('gameCanvas');
             document.getElementById('gameOverScreen').classList.add('hidden');
             document.getElementById('stageSelectScreen').classList.add('hidden');
             document.getElementById('stageClearScreen').classList.add('hidden');
+            document.getElementById('loopCompleteScreen').classList.add('hidden');
             document.getElementById('startScreen').classList.remove('hidden');
         }
 
@@ -1371,6 +1372,7 @@ const canvas = document.getElementById('gameCanvas');
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('stageSelectScreen').classList.add('hidden');
             document.getElementById('gameOverScreen').classList.add('hidden');
+            document.getElementById('loopCompleteScreen').classList.add('hidden');
             
             cancelAnimationFrame(animationId);
             
@@ -1398,6 +1400,5 @@ const canvas = document.getElementById('gameCanvas');
             animationId = requestAnimationFrame(animate);
         }
 
-        updateNextLoopButton();
         renderStageOptions();
         resize();

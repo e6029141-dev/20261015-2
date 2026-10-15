@@ -26,7 +26,6 @@
         <h1 class="text-5xl md:text-7xl font-black text-white mb-2 tracking-wider" style="text-shadow: 0 0 20px #3b82f6;">SPACE SHOOTER</h1>
         <p class="text-blue-300 mb-2 font-bold">ver 3.00</p>
         <p class="text-gray-400 text-sm mb-8 tracking-widest font-semibold">produced by HONDA</p>
-        <button id="nextLoopButton" class="btn hidden" onclick="startNextLoop()"></button>
         <button class="btn btn-secondary" onclick="openStageSelect()">STAGE SELECT</button>
         <button class="btn btn-secondary" onclick="openHighScores()">ハイスコアを見る</button>
         <button class="btn" onclick="startGame()">START GAME</button>
@@ -77,6 +76,15 @@
     <div id="stageClearScreen" class="overlay hidden bg-transparent">
         <h1 class="text-5xl font-black text-yellow-400 tracking-wider" style="text-shadow: 0 0 20px #eab308; animation: pulse 1s infinite;">STAGE CLEAR!</h1>
         <p class="loop-clear-subtitle"></p>
+    </div>
+
+    <div id="loopCompleteScreen" class="overlay hidden">
+        <section class="record-panel">
+            <h1 class="text-4xl font-black text-yellow-400 tracking-wider">LOOP COMPLETE!</h1>
+            <p id="loopCompleteSummary" class="text-white"></p>
+            <button class="btn" onclick="startNextLoop()">もう1周挑戦</button>
+            <button class="btn btn-secondary" onclick="quitAfterLoop()">ここでゲームをやめる</button>
+        </section>
     </div>
 
     <script src="game.js"></script>
