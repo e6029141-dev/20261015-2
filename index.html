@@ -27,6 +27,7 @@
         <p class="text-blue-300 mb-2 font-bold">ver 3.00</p>
         <p class="text-gray-400 text-sm mb-8 tracking-widest font-semibold">produced by HONDA</p>
         <button class="btn btn-secondary" onclick="openStageSelect()">STAGE SELECT</button>
+        <button class="btn btn-secondary" onclick="openHighScores()">ハイスコアを見る</button>
         <button class="btn" onclick="startGame()">START GAME</button>
     </div>
 
@@ -34,6 +35,14 @@
         <h1 class="text-5xl font-black text-white mb-6 tracking-wider">SELECT STAGE</h1>
         <div id="stageOptions" class="stage-options"></div>
         <button class="btn btn-secondary" onclick="closeStageSelect()">BACK</button>
+    </div>
+
+    <div id="highScoreScreen" class="overlay hidden">
+        <section class="record-panel">
+            <h1 class="text-4xl font-black text-yellow-400 tracking-wider">HIGH SCORES</h1>
+            <ol id="highScoreList" class="record-list"></ol>
+            <button class="btn btn-secondary" onclick="closeHighScores()">トップへ戻る</button>
+        </section>
     </div>
 
     <div id="gameOverScreen" class="overlay hidden">

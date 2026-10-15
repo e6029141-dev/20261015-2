@@ -815,8 +815,15 @@ const canvas = document.getElementById('gameCanvas');
             }
         }
 
-        function renderRecords(records) {
-            recordList.replaceChildren();
+        function renderRecords(records, listElement = recordList) {
+            listElement.replaceChildren();
+            if (records.length === 0) {
+                const emptyRow = document.createElement('li');
+                emptyRow.className = 'record-empty';
+                emptyRow.textContent = '記録はまだありません';
+                listElement.append(emptyRow);
+                return;
+            }
             records.forEach((record, index) => {
                 const row = document.createElement('li');
                 const rank = document.createElement('span');
@@ -828,7 +835,7 @@ const canvas = document.getElementById('gameCanvas');
                 detail.className = 'record-detail';
                 detail.textContent = `ステージ${record.stage} ポイント${record.score.toLocaleString()}`;
                 row.append(rank, name, detail);
-                recordList.append(row);
+                listElement.append(row);
             });
         }
 
@@ -1158,6 +1165,17 @@ const canvas = document.getElementById('gameCanvas');
 
         function closeStageSelect() {
             document.getElementById('stageSelectScreen').classList.add('hidden');
+            document.getElementById('startScreen').classList.remove('hidden');
+        }
+
+        function openHighScores() {
+            renderRecords(loadRecords(), document.getElementById('highScoreList'));
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('highScoreScreen').classList.remove('hidden');
+        }
+
+        function closeHighScores() {
+            document.getElementById('highScoreScreen').classList.add('hidden');
             document.getElementById('startScreen').classList.remove('hidden');
         }
 
