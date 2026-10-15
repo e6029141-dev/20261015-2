@@ -45,6 +45,88 @@ const canvas = document.getElementById('gameCanvas');
             }
         }
 
+        const bgmTracks = [
+            { bpm: 112, lead: [76, 0, 79, 83, 0, 79, 81, 0, 76, 0, 71, 76, 0, 79, 81, 0], bass: [52, 59, 55, 59] },
+            { bpm: 124, lead: [69, 0, 72, 76, 0, 72, 74, 0, 69, 0, 65, 69, 0, 72, 74, 0], bass: [45, 52, 48, 52] },
+            { bpm: 118, lead: [72, 76, 79, 0, 84, 0, 79, 76, 74, 77, 81, 0, 86, 0, 81, 77], bass: [48, 55, 50, 57] },
+            { bpm: 108, lead: [67, 0, 70, 74, 0, 70, 72, 0, 67, 0, 63, 67, 0, 70, 72, 0], bass: [43, 50, 46, 50] },
+            { bpm: 120, lead: [74, 0, 77, 81, 0, 77, 79, 0, 74, 0, 69, 74, 0, 77, 79, 0], bass: [50, 57, 53, 57] }
+        ];
+        let bgmTimer = null;
+        let bgmGain = null;
+        let bgmTrack = null;
+        let bgmStep = 0;
+        let bgmNextNoteTime = 0;
+
+        function midiToFrequency(note) {
+            return 440 * Math.pow(2, (note - 69) / 12);
+        }
+
+        function scheduleBgmTone(note, startTime, duration, wave, volume) {
+            const oscillator = audioCtx.createOscillator();
+            const envelope = audioCtx.createGain();
+            oscillator.type = wave;
+            oscillator.frequency.setValueAtTime(midiToFrequency(note), startTime);
+            envelope.gain.setValueAtTime(0.0001, startTime);
+            envelope.gain.linearRampToValueAtTime(volume, startTime + 0.02);
+            envelope.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+            oscillator.connect(envelope);
+            envelope.connect(bgmGain);
+            oscillator.start(startTime);
+            oscillator.stop(startTime + duration + 0.02);
+        }
+
+        function scheduleBgm() {
+            if (!audioCtx || !bgmTrack || !bgmGain) return;
+            const stepDuration = 60 / bgmTrack.bpm / 2;
+            const scheduleUntil = audioCtx.currentTime + 0.2;
+
+            while (bgmNextNoteTime < scheduleUntil) {
+                const step = bgmStep % bgmTrack.lead.length;
+                const leadNote = bgmTrack.lead[step];
+                if (leadNote > 0) {
+                    scheduleBgmTone(leadNote, bgmNextNoteTime, stepDuration * 0.75, 'triangle', 0.035);
+                }
+                if (step % 4 === 0) {
+                    const bassNote = bgmTrack.bass[Math.floor(step / 4)];
+                    scheduleBgmTone(bassNote, bgmNextNoteTime, stepDuration * 3.5, 'sine', 0.045);
+                }
+                bgmNextNoteTime += stepDuration;
+                bgmStep++;
+            }
+        }
+
+        function stopBgm() {
+            if (bgmTimer !== null) {
+                clearInterval(bgmTimer);
+                bgmTimer = null;
+            }
+            if (bgmGain && audioCtx) {
+                const oldGain = bgmGain;
+                const now = audioCtx.currentTime;
+                oldGain.gain.cancelScheduledValues(now);
+                oldGain.gain.setValueAtTime(oldGain.gain.value, now);
+                oldGain.gain.linearRampToValueAtTime(0.0001, now + 0.2);
+                setTimeout(() => oldGain.disconnect(), 250);
+                bgmGain = null;
+            }
+            bgmTrack = null;
+        }
+
+        function startBgm(stage) {
+            stopBgm();
+            if (!audioCtx) return;
+            bgmTrack = bgmTracks[(stage - 1) % bgmTracks.length];
+            bgmStep = 0;
+            bgmNextNoteTime = audioCtx.currentTime + 0.05;
+            bgmGain = audioCtx.createGain();
+            bgmGain.gain.setValueAtTime(0.0001, audioCtx.currentTime);
+            bgmGain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.5);
+            bgmGain.connect(audioCtx.destination);
+            scheduleBgm();
+            bgmTimer = setInterval(scheduleBgm, 50);
+        }
+
         function playSound(type) {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
@@ -734,6 +816,7 @@ const canvas = document.getElementById('gameCanvas');
 
             if (player.hp <= 0) {
                 gameActive = false;
+                stopBgm();
                 document.getElementById('gameOverScreen').classList.remove('hidden');
                 document.getElementById('finalScore').innerText = score;
             }
@@ -756,6 +839,7 @@ const canvas = document.getElementById('gameCanvas');
                     if (!gameActive) return;
                     currentStage++;
                     saveHighestStage(currentStage);
+                    startBgm(currentStage);
                     isStageTransition = false;
                     lastBossSpawnTime = performance.now();
                     updateUI();
@@ -993,6 +1077,7 @@ const canvas = document.getElementById('gameCanvas');
 
         function returnToTitle() {
             gameActive = false;
+            stopBgm();
             isStageTransition = false;
             player.isShooting = false;
             cancelAnimationFrame(animationId);
@@ -1030,6 +1115,7 @@ const canvas = document.getElementById('gameCanvas');
             frameCount = 0;
             lastBossSpawnTime = performance.now();
             gameActive = true;
+            startBgm(currentStage);
             
             updateUI();
             animationId = requestAnimationFrame(animate);
