@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SPACE SHOOTER ver3.00</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="ui-layer">
+        <div class="flex justify-between w-full">
+            <div class="hud-text">SCORE: <span id="scoreDisplay">0</span></div>
+            <div class="hud-text">STAGE <span id="stageDisplay">1</span></div>
+        </div>
+        <div class="flex justify-between w-full items-end">
+            <div class="hud-text hp-text" id="hpDisplay">♥♥♥</div>
+            <div class="hud-text text-sm" id="powerDisplay">POWER: 1</div>
+        </div>
+    </div>
+
+    <div id="startScreen" class="overlay">
+        <h1 class="text-5xl md:text-7xl font-black text-white mb-2 tracking-wider" style="text-shadow: 0 0 20px #3b82f6;">SPACE SHOOTER</h1>
+        <p class="text-blue-300 mb-2 font-bold">ver 3.00</p>
+        <p class="text-gray-400 text-sm mb-8 tracking-widest font-semibold">produced by HONDA</p>
+        <button class="btn" onclick="startGame()">START GAME</button>
+    </div>
+
+    <div id="gameOverScreen" class="overlay hidden">
+        <h1 class="text-6xl font-black text-red-500 mb-4 tracking-wider" style="text-shadow: 0 0 20px #ef4444;">GAME OVER</h1>
+        <p class="text-white text-2xl mb-8">FINAL SCORE: <span id="finalScore" class="font-bold text-yellow-400">0</span></p>
+        <button class="btn" onclick="startGame()">RETRY</button>
+    </div>
+    
+    <div id="stageClearScreen" class="overlay hidden bg-transparent">
+        <h1 class="text-5xl font-black text-yellow-400 tracking-wider" style="text-shadow: 0 0 20px #eab308; animation: pulse 1s infinite;">STAGE CLEAR!</h1>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
