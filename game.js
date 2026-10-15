@@ -224,6 +224,43 @@ const canvas = document.getElementById('gameCanvas');
             }
         }
 
+        function playLoopClearFanfare() {
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+            const notes = [523.25, 659.25, 783.99, 1046.5];
+            notes.forEach((frequency, index) => {
+                const oscillator = audioCtx.createOscillator();
+                const envelope = audioCtx.createGain();
+                const startTime = now + index * 0.19;
+                const duration = index === notes.length - 1 ? 0.9 : 0.2;
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(frequency, startTime);
+                envelope.gain.setValueAtTime(0.0001, startTime);
+                envelope.gain.linearRampToValueAtTime(0.16, startTime + 0.025);
+                envelope.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+                oscillator.connect(envelope);
+                envelope.connect(audioCtx.destination);
+                oscillator.start(startTime);
+                oscillator.stop(startTime + duration + 0.02);
+            });
+
+            const chordStart = now + 0.76;
+            [523.25, 659.25, 783.99, 1046.5].forEach(frequency => {
+                const oscillator = audioCtx.createOscillator();
+                const envelope = audioCtx.createGain();
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(frequency, chordStart);
+                envelope.gain.setValueAtTime(0.0001, chordStart);
+                envelope.gain.linearRampToValueAtTime(0.055, chordStart + 0.04);
+                envelope.gain.exponentialRampToValueAtTime(0.001, chordStart + 0.9);
+                oscillator.connect(envelope);
+                envelope.connect(audioCtx.destination);
+                oscillator.start(chordStart);
+                oscillator.stop(chordStart + 0.92);
+            });
+        }
+
         const player = {
             width: 30,
             height: 40,
@@ -926,7 +963,9 @@ const canvas = document.getElementById('gameCanvas');
 
         function handleStageClear() {
             isStageTransition = true;
-            playSound('stageClear');
+            const isLoopClear = currentStage % stagesPerLoop === 0;
+            if (isLoopClear) playLoopClearFanfare();
+            else playSound('stageClear');
             boss = null; 
             bossActive = false;
             bossProjectiles = [];
@@ -934,8 +973,12 @@ const canvas = document.getElementById('gameCanvas');
             
             const clearScreen = document.getElementById('stageClearScreen');
             const clearMessage = clearScreen.querySelector('h1');
-            const isLoopClear = currentStage % stagesPerLoop === 0;
-            clearMessage.textContent = isLoopClear ? 'ALL STAGES CLEAR!' : 'STAGE CLEAR!';
+            const clearSubtitle = clearScreen.querySelector('.loop-clear-subtitle');
+            clearScreen.classList.toggle('loop-clear', isLoopClear);
+            clearMessage.textContent = isLoopClear ? 'LOOP COMPLETE!' : 'STAGE CLEAR!';
+            clearSubtitle.textContent = isLoopClear
+                ? `STAGE ${currentStage - stagesPerLoop + 1}-${currentStage} COMPLETE`
+                : '';
             clearScreen.classList.remove('hidden');
             
             setTimeout(() => {
@@ -952,6 +995,8 @@ const canvas = document.getElementById('gameCanvas');
                         stopBgm();
                         document.getElementById('startScreen').classList.remove('hidden');
                         clearMessage.textContent = 'STAGE CLEAR!';
+                        clearSubtitle.textContent = '';
+                        clearScreen.classList.remove('loop-clear');
                         return;
                     }
                     currentStage++;
